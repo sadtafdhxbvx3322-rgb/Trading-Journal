@@ -12,11 +12,11 @@ exports.handler = async function(event, context) {
     const database = (await clientPromise).db("TradingJournal");
     const collection = database.collection("Trades");
 
+    // Ab 'date' seedha frontend se aayegi tradeData ke andar
     const finalDataToSave = {
       ...tradeData,
       rr: "1:2",
-      timeframe: "3m",
-      date: new Date().toISOString()
+      timeframe: "3m"
     };
 
     await collection.insertOne(finalDataToSave);
