@@ -6,14 +6,25 @@
   <title>Pro Trading Journal</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen p-4 font-sans antialiased flex items-center justify-center">
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 font-sans antialiased flex flex-col items-center justify-center">
 
-  <div class="w-full max-w-md bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+  <div class="w-full max-w-md bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 relative">
+    
+    <a href="/calendar.html" class="absolute top-4 right-4 text-gray-400 hover:text-green-400 transition" title="Go to Calendar">
+      📅 Calendar
+    </a>
+
     <h2 class="text-3xl font-extrabold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
       Log Trade
     </h2>
 
     <form id="tradeForm" class="space-y-5">
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-1">Date & Time</label>
+        <input type="datetime-local" id="tradeDate" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-green-400 focus:outline-none" />
+      </div>
+
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-1">Asset</label>
         <select id="asset" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-green-400 focus:outline-none appearance-none">
@@ -57,15 +68,25 @@
   </div>
 
   <script>
+    // Page load hote hi current date/time set karna
+    window.onload = () => {
+      const now = new Date();
+      // Local timezone ke hisaab se format adjust karna (YYYY-MM-DDThh:mm)
+      const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById('tradeDate').value = localDateTime;
+    };
+
     document.getElementById('tradeForm').addEventListener('submit', async function(event) {
       event.preventDefault();
       
       const btn = event.target.querySelector('button');
       const originalText = btn.innerHTML;
       btn.innerHTML = "⏳ Uploading...";
-      btn.disabled = true; // Button disable kardo double tap se bachne ke liye
+      btn.disabled = true; 
       
+      // Form data collect karna, date ke sath
       const tradeData = {
+        date: new Date(document.getElementById('tradeDate').value).toISOString(),
         asset: document.getElementById('asset').value,
         entryPrice: parseFloat(document.getElementById('entry').value),
         tp: parseFloat(document.getElementById('tp').value),
@@ -81,7 +102,10 @@
         
         if (response.ok) {
           alert("Trade Saved Successfully! 🚀");
+          // Form reset karne ke baad wapas current time dal do
           event.target.reset();
+          const now = new Date();
+          document.getElementById('tradeDate').value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         } else {
           alert("Error: Shayad database connect nahi hua.");
         }
