@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journal Calendar</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    /* Calendar ko dark theme ke hisaab se adjust karna */
+    .fc { color: #f3f4f6; }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: #374151; }
+    .fc .fc-button-primary { background-color: #10b981; border: none; }
+    .fc .fc-button-primary:hover { background-color: #059669; }
+    .fc-day-today { background-color: #1f2937 !important; }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 font-sans antialiased">
+
+  <div class="max-w-4xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
+      <h2 class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 mb-4 md:mb-0">
+        Trade Calendar
+      </h2>
+      
+      <div class="flex gap-4 items-center">
+        <select id="assetFilter" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-white focus:ring-2 focus:ring-green-400 focus:outline-none">
+          <option value="ALL">🌍 All Assets</option>
+          <option value="XAGUSD">XAGUSD</option>
+          <option value="XAUUSD">XAUUSD</option>
+          <option value="BTCUSD">BTCUSD</option>
+          <option value="EURUSD">EURUSD</option>
+        </select>
+
+        <a href="/" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg shadow transition">
+          ➕ New Trade
+        </a>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 p-4 rounded-xl shadow-2xl border border-gray-700">
+      <div id="calendar"></div>
+    </div>
+  </div>
+
+  <script>
+    let allTrades = [];
+    let calendar;
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const calendarEl = document.getElementById('calendar');
+      
+      // Calendar Initialize karna
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek'
+        },
+        height: 'auto',
+        eventClick: function(info) {
+          // Trade par click karne par popup dikhana
+          const props = info.event.extendedProps;
+          Swal.fire({
+            title: `${info.event.title}`,
+            html: `
+              <b>Entry:</b> ${props.entry}<br/>
+              <b>TP:</b> ${props.tp}<br/>
+              <b>SL:</b> ${props.sl}<br/>
+              <b>RR:</b> ${props.rr}<br/>
+              <b>Timeframe:</b> ${props.timeframe}
+            `,
+            icon: props.result === 'Win' ? 'success' : (props.result === 'Loss' ? 'error' : 'info'),
+            background: '#1f2937',
+            color: '#f3f4f6',
+            confirmButtonColor: '#10b981'
+          });
+        }
+      });
+      calendar.render();
+
+      // Database se trades lana
+      await fetchTrades();
+    });
+
+    async function fetchTrades() {
+      try {
+        const response = await fetch('/.netlify/functions/getTrades');
+        allTrades = await response.json();
+        renderEvents("ALL"); // Shuru mein saari trades dikhana
+      } catch (error) {
+        console.error("Error fetching trades", error);
+        Swal.fire('Error', 'Trades load nahi ho payi. Database connect hai?', 'error');
+      }
+    }
+
+    function renderEvents(filterAsset) {
+      // Purane events hatao
+      calendar.removeAllEvents();
+
+      // Filter lagao
+      const filteredTrades = filterAsset === "ALL" 
+        ? allTrades 
+        : allTrades.filter(t => t.asset === filterAsset);
+
+      // Har trade ko calendar event mein convert karna
+      filteredTrades.forEach(trade => {
+        let eventColor = '#6b7280'; // Breakeven (Gray)
+        if (trade.result === 'Win') eventColor = '#10b981'; // Green
+        if (trade.result === 'Loss') eventColor = '#ef4444'; // Red
+
+        calendar.addEvent({
+          title: `${trade.asset} (${trade.result})`,
+          start: trade.date,
+          color: eventColor,
+          extendedProps: {
+            entry: trade.entryPrice,
+            tp: trade.tp,
+            sl: trade.sl,
+            rr: trade.rr,
+            result: trade.result,
+            timeframe: trade.timeframe
+          }
+        });
+      });
+    }
+
+    // Dropdown change hone par calendar update karna
+    document.getElementById('assetFilter').addEventListener('change', (e) => {
+      renderEvents(e.target.value);
+    });
+  </script>
+</body>
+</html>
