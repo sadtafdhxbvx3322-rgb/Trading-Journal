@@ -3,44 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Trading Journal</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f4f4f9; }
-    form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    input, select, button { display: block; width: 100%; margin-bottom: 15px; padding: 12px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; }
-    button { background-color: #28a745; color: white; border: none; font-weight: bold; font-size: 16px; }
-  </style>
+  <title>Pro Trading Journal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>Log a New Trade</h2>
-  <form id="tradeForm">
-    <label>Asset:</label>
-    <select id="asset" required>
-      <option value="XAGUSD">XAGUSD</option>
-      <option value="XAUUSD">XAUUSD</option>
-      <option value="BTCUSD">BTCUSD</option>
-      <option value="EURUSD">EURUSD</option>
-    </select>
-    <label>Entry Price:</label>
-    <input type="number" step="any" id="entry" required />
-    <label>Take Profit (TP):</label>
-    <input type="number" step="any" id="tp" required />
-    <label>Stop Loss (SL):</label>
-    <input type="number" step="any" id="sl" required />
-    <label>Result:</label>
-    <select id="result" required>
-      <option value="Win">Win</option>
-      <option value="Loss">Loss</option>
-      <option value="Breakeven">Breakeven</option>
-    </select>
-    <button type="submit">Upload Trade</button>
-  </form>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 font-sans antialiased flex items-center justify-center">
+
+  <div class="w-full max-w-md bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+    <h2 class="text-3xl font-extrabold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+      Log Trade
+    </h2>
+
+    <form id="tradeForm" class="space-y-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-1">Asset</label>
+        <select id="asset" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-green-400 focus:outline-none appearance-none">
+          <option value="XAGUSD">XAGUSD</option>
+          <option value="XAUUSD">XAUUSD</option>
+          <option value="BTCUSD">BTCUSD</option>
+          <option value="EURUSD">EURUSD</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">Entry Price</label>
+          <input type="number" step="any" id="entry" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-green-400 focus:outline-none" placeholder="0.000" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">Result</label>
+          <select id="result" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-green-400 focus:outline-none appearance-none">
+            <option value="Win">🟢 Win</option>
+            <option value="Loss">🔴 Loss</option>
+            <option value="Breakeven">⚪ Breakeven</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">Take Profit</label>
+          <input type="number" step="any" id="tp" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-green-400 focus:outline-none" placeholder="TP" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">Stop Loss</label>
+          <input type="number" step="any" id="sl" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-green-400 focus:outline-none" placeholder="SL" />
+        </div>
+      </div>
+
+      <button type="submit" class="w-full mt-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg transform transition hover:scale-[1.02]">
+        🚀 Upload Trade
+      </button>
+    </form>
+  </div>
+
   <script>
     document.getElementById('tradeForm').addEventListener('submit', async function(event) {
       event.preventDefault();
+      
       const btn = event.target.querySelector('button');
-      btn.innerText = "Uploading...";
-
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "⏳ Uploading...";
+      btn.disabled = true; // Button disable kardo double tap se bachne ke liye
+      
       const tradeData = {
         asset: document.getElementById('asset').value,
         entryPrice: parseFloat(document.getElementById('entry').value),
@@ -48,21 +72,25 @@
         sl: parseFloat(document.getElementById('sl').value),
         result: document.getElementById('result').value
       };
+      
       try {
         const response = await fetch('/.netlify/functions/addTrade', {
           method: 'POST',
           body: JSON.stringify(tradeData)
         });
+        
         if (response.ok) {
-          alert("Trade Saved! 🚀");
+          alert("Trade Saved Successfully! 🚀");
           event.target.reset();
         } else {
-          alert("Error saving trade.");
+          alert("Error: Shayad database connect nahi hua.");
         }
       } catch (error) {
         alert("Network Error!");
       }
-      btn.innerText = "Upload Trade";
+      
+      btn.innerHTML = originalText;
+      btn.disabled = false;
     });
   </script>
 </body>
